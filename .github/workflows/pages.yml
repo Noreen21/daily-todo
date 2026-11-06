@@ -33,7 +33,7 @@ jobs:
           perl -pi -e "s|__REPOSITORY_URL__|https://github.com/${GITHUB_REPOSITORY}|g" docs/index.html
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: docs
 
