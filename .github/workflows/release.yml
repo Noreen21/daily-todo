@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build universal macOS app
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Run checks
+        run: make test
+
+      - name: Build app bundle
+        run: make app
+
+      - name: Verify sandbox entitlements
+        run: codesign -d --entitlements - build/DailyTodo.app 2>/dev/null | grep -q 'com.apple.security.app-sandbox'
+
+      - name: Create release archive
+        run: |
+          ditto -c -k --keepParent build/DailyTodo.app DailyTodo-macOS.zip
+          shasum -a 256 DailyTodo-macOS.zip > DailyTodo-macOS.zip.sha256
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            DailyTodo-macOS.zip \
+            DailyTodo-macOS.zip.sha256 \
+            --generate-notes \
+            --verify-tag
