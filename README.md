@@ -9,7 +9,7 @@ A private, local-first macOS SwiftUI app for daily tasks.
 - Configure workday start time and IANA time zone
 - Send one midday reminder while pending tasks remain
 - Open at login and activate the window at workday start
-- Store tasks locally in the sandboxed Application Support directory
+- Store tasks locally in the sandboxed Application Support directory (imports any pre-sandbox data on launch)
 
 ## Privacy
 

@@ -6,6 +6,7 @@
 - No analytics, telemetry, or advertising SDKs
 - `PrivacyInfo.xcprivacy` declares no tracking and no collected data types
 - Tasks live in the sandboxed Application Support directory for `app.dailytodo.macos`
+- Older unsandboxed builds stored data in `~/Library/Application Support/DailyTodo/`; on launch the app migrates and merges that file into the sandbox container
 - Task titles are plain local JSON — do not store passwords or tokens in tasks
 - Directory permissions `0700`, file permissions `0600`
 - Notifications include only the pending-task count
