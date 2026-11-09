@@ -129,7 +129,7 @@ let privateStoreDirectory = FileManager.default.temporaryDirectory
 let temporaryFileURL = privateStoreDirectory.appendingPathComponent("daily-todo.json")
 defer { try? FileManager.default.removeItem(at: privateStoreDirectory) }
 
-let documentStore = TodoDocumentStore(fileURL: temporaryFileURL)
+let documentStore = TodoDocumentStore(fileURL: temporaryFileURL, legacyFileURL: nil)
 var persistedDocument = TodoDocument(
     settings: TodoSettings(
         workdayStartTime: TimeOfDay(hour: 8, minute: 45),
@@ -164,6 +164,43 @@ do {
 } catch {
     failures.append("document persistence: \(error)")
 }
+
+let legacyOnly = TodoDocument(
+    settings: TodoSettings(timezoneIdentifier: "Asia/Kolkata"),
+    items: [
+        TodoItem(
+            id: UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!,
+            title: "Legacy task",
+            dueDate: reminderDay
+        )
+    ],
+    lastReminderDayKey: "2026-11-05"
+)
+let primaryOnly = TodoDocument(
+    settings: TodoSettings(
+        workdayStartTime: TimeOfDay(hour: 12, minute: 0),
+        timezoneIdentifier: "Asia/Colombo"
+    ),
+    items: []
+)
+let mergedFromLegacy = TodoDocumentStore.merge(primary: primaryOnly, legacy: legacyOnly)!
+expectEqual(mergedFromLegacy.settings.timezoneIdentifier, "Asia/Colombo", "merge keeps active settings")
+expectEqual(mergedFromLegacy.items.map(\.title), ["Legacy task"], "merge imports legacy tasks")
+expectEqual(mergedFromLegacy.lastReminderDayKey, "2026-11-05", "merge keeps legacy reminder day when primary lacks one")
+
+let primaryWithOverlap = TodoDocument(
+    settings: TodoSettings(timezoneIdentifier: "Asia/Colombo"),
+    items: [
+        TodoItem(
+            id: UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!,
+            title: "Updated task",
+            dueDate: reminderDay,
+            deferredCount: 2
+        )
+    ]
+)
+let mergedOverlap = TodoDocumentStore.merge(primary: primaryWithOverlap, legacy: legacyOnly)!
+expectEqual(mergedOverlap.items.map(\.title), ["Updated task"], "merge prefers primary item for the same id")
 
 if failures.isEmpty {
     print("All DailyTodo checks passed.")
